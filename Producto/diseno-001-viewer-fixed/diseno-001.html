@@ -33,12 +33,15 @@
     background:transparent;
     border:none;
     color:#cfd9c9;
-    font-size:12px;
+    font-size:10.5px;
     font-weight:600;
-    padding:7px 4px;
+    padding:7px 2px;
     border-radius:8px;
     font-family:inherit;
     cursor:pointer;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
   }
   .tabbar button.active{
     background:#cc9c4d;
@@ -111,22 +114,24 @@
 
 <div class="app">
   <div class="tabbar" id="tabbar">
-    <button data-i="0">Venta</button>
-    <button data-i="1">Diseño</button>
-    <button data-i="2">Preparación</button>
-    <button data-i="3">Montaje</button>
+    <button data-i="0">1 · Diseño</button>
+    <button data-i="1">2 · Preparación</button>
+    <button data-i="2">3 · Montaje</button>
+    <button data-i="3">4 · Venta</button>
   </div>
 
   <div class="stage">
     <button class="nav-btn prev" id="prev" aria-label="Anterior">&larr;</button>
-    <img id="img" src="assets/4-venta.png" alt="Diseño 001">
+    <img id="img" src="assets/1-diseno.png" alt="Diseño 001">
     <button class="nav-btn next" id="next" aria-label="Siguiente">&rarr;</button>
     <div class="dots" id="dots"></div>
   </div>
 </div>
 
 <script>
-  const pages = ['assets/4-venta.png','assets/1-diseno.png','assets/2-preparacion.png','assets/3-montaje.png'];
+  // Orden = numeración real de las páginas del diseño (pagina1, pagina2, ...).
+  // Para un diseño de 5 páginas, solo agrega el archivo aquí y un botón más arriba.
+  const pages = ['assets/1-diseno.png','assets/2-preparacion.png','assets/3-montaje.png','assets/4-venta.png'];
   const buttons = [...document.querySelectorAll('#tabbar button')];
   const img = document.getElementById('img');
   const dotsWrap = document.getElementById('dots');
