@@ -64,6 +64,12 @@
     display:block;
     border-radius:6px;
     box-shadow:0 4px 18px rgba(0,0,0,.35);
+    -webkit-touch-callout:none;   /* evita el menú "Abrir imagen / Guardar" al mantener presionado en iOS */
+    -webkit-user-select:none;
+    user-select:none;
+    -webkit-user-drag:none;
+    user-drag:none;
+    pointer-events:none;          /* la imagen no reacciona a toques; el swipe lo maneja .stage */
   }
   .nav-btn{
     position:absolute;
@@ -186,6 +192,8 @@
       <div class="dots" id="dots"></div>
     `;
     const img = document.getElementById('img');
+    img.addEventListener('contextmenu', e=>e.preventDefault());   // bloquea el menú clic-derecho/mantener presionado
+    img.addEventListener('dragstart', e=>e.preventDefault());     // bloquea arrastrar la imagen fuera
     const dotsWrap = document.getElementById('dots');
     pages.forEach(()=>dotsWrap.appendChild(document.createElement('span')));
     const dots = [...dotsWrap.children];
