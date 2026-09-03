@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Visor de diseño</title>
+<style>
+  *{box-sizing:border-box;}
+  html,body{
+    height:100%;
+    margin:0;
+    overflow:hidden;
+    background:#141d15;
+    font-family:-apple-system,Segoe UI,Roboto,sans-serif;
+  }
+  .app{
+    display:flex;
+    flex-direction:column;
+    height:100vh;
+    width:100%;
+  }
+  .tabbar{
+    flex:0 0 auto;
+    display:flex;
+    gap:5px;
+    background:#16281c;
+    padding:7px 7px;
+  }
+  .tabbar button{
+    flex:1;
+    background:transparent;
+    border:none;
+    color:#cfd9c9;
+    font-size:10.5px;
+    font-weight:600;
+    padding:7px 2px;
+    border-radius:8px;
+    font-family:inherit;
+    cursor:pointer;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
+  .tabbar button.active{
+    background:#cc9c4d;
+    color:#16281c;
+  }
+  .stage{
+    flex:1 1 auto;
+    min-height:0;
+    position:relative;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    background:#0f1811;
+    padding:8px;
+  }
+  .stage img{
+    max-width:100%;
+    max-height:100%;
+    width:auto;
+    height:auto;
+    object-fit:contain;
+    display:block;
+    border-radius:6px;
+    box-shadow:0 4px 18px rgba(0,0,0,.35);
+  }
+  .nav-btn{
+    position:absolute;
+    top:50%;
+    transform:translateY(-50%);
+    width:34px;
+    height:34px;
+    border-radius:50%;
+    background:rgba(15,24,17,.55);
+    border:1px solid rgba(255,255,255,.25);
+    color:#f4efdc;
+    font-size:16px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    cursor:pointer;
+  }
+  .nav-btn.prev{left:8px;}
+  .nav-btn.next{right:8px;}
+  .nav-btn:disabled{opacity:.25;pointer-events:none;}
+  .dots{
+    position:absolute;
+    bottom:6px;
+    left:0;
+    right:0;
+    display:flex;
+    justify-content:center;
+    gap:6px;
+  }
+  .dots span{
+    width:6px;
+    height:6px;
+    border-radius:50%;
+    background:rgba(255,255,255,.35);
+  }
+  .dots span.active{background:#cc9c4d;}
+  .error{
+    color:#e4c7c7;
+    font-size:13px;
+    text-align:center;
+    padding:20px;
+    line-height:1.6;
+  }
+  .loading{
+    color:#cfd9c9;
+    font-size:13px;
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <div class="tabbar" id="tabbar"></div>
+  <div class="stage" id="stage">
+    <div class="loading">Cargando…</div>
+  </div>
+</div>
+
+<script>
+  // ---- Convención de archivos ----
+  // Cada diseño vive en: disenos/{ID}/pagina1.png, pagina2.png, ...
+  // El visor detecta automáticamente cuántas páginas tiene ese diseño
+  // (se detiene en el primer número que no encuentra).
+  // La URL del iframe controla qué diseño se muestra: visor.html?d=001
+
+  const params = new URLSearchParams(location.search);
+  const designId = params.get('d');
+  const MAX_PAGES = 6; // tope de seguridad, sube esto si algún diseño tuviera más páginas
+  const LABELS = ['Diseño','Preparación','Montaje','Venta','Página 5','Página 6'];
+
+  const stage = document.getElementById('stage');
+  const tabbar = document.getElementById('tabbar');
+
+  function checkImage(src){
+    return new Promise(resolve=>{
+      const img = new Image();
+      img.onload = ()=>resolve(true);
+      img.onerror = ()=>resolve(false);
+      img.src = src;
+    });
+  }
+
+  async function init(){
+    if(!designId){
+      stage.innerHTML = '<div class="error">Falta el parámetro ?d= en la URL.<br>Ejemplo: visor.html?d=001</div>';
+      return;
+    }
+
+    // Convención real de archivos: {id}_h_pagina{n}.png (h = generado en horizontal)
+    const base = `disenos/${designId}/${designId}_h_pagina`;
+    const candidates = [];
+    for(let n=1;n<=MAX_PAGES;n++) candidates.push(`${base}${n}.png`);
+
+    const results = await Promise.all(candidates.map(checkImage));
+    const pages = [];
+    for(let i=0;i<results.length;i++){
+      if(results[i]) pages.push(candidates[i]);
+      else break; // numeración contigua: se detiene en el primer hueco
+    }
+
+    if(pages.length === 0){
+      stage.innerHTML = `<div class="error">No se encontraron imágenes para el diseño "${designId}".<br>Revisa que existan en disenos/${designId}/pagina1.png, pagina2.png…</div>`;
+      return;
+    }
+
+    let current = 0;
+
+    pages.forEach((_,i)=>{
+      const b = document.createElement('button');
+      b.textContent = `${i+1} · ${LABELS[i] || 'Página '+(i+1)}`;
+      b.addEventListener('click', ()=>show(i));
+      tabbar.appendChild(b);
+    });
+    const buttons = [...tabbar.children];
+
+    stage.innerHTML = `
+      <button class="nav-btn prev" id="prev" aria-label="Anterior">&larr;</button>
+      <img id="img" alt="${designId}">
+      <button class="nav-btn next" id="next" aria-label="Siguiente">&rarr;</button>
+      <div class="dots" id="dots"></div>
+    `;
+    const img = document.getElementById('img');
+    const dotsWrap = document.getElementById('dots');
+    pages.forEach(()=>dotsWrap.appendChild(document.createElement('span')));
+    const dots = [...dotsWrap.children];
+    const prevBtn = document.getElementById('prev');
+    const nextBtn = document.getElementById('next');
+
+    function show(i){
+      current = (i + pages.length) % pages.length;
+      img.src = pages[current];
+      buttons.forEach((b,idx)=>b.classList.toggle('active', idx===current));
+      dots.forEach((d,idx)=>d.classList.toggle('active', idx===current));
+      prevBtn.disabled = current===0;
+      nextBtn.disabled = current===pages.length-1;
+    }
+
+    prevBtn.addEventListener('click', ()=>show(current-1));
+    nextBtn.addEventListener('click', ()=>show(current+1));
+
+    let startX = 0;
+    document.getElementById('stage').addEventListener('touchstart', e=>startX=e.touches[0].clientX);
+    document.getElementById('stage').addEventListener('touchend', e=>{
+      const dx = e.changedTouches[0].clientX - startX;
+      if (dx > 40) show(current-1);
+      if (dx < -40) show(current+1);
+    });
+
+    show(0);
+  }
+
+  init();
+</script>
+
+</body>
+</html>
