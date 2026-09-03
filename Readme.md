@@ -1,2 +1,2 @@
-# ProductoTiramisu
-Repositorio para visor de PDF de Tiramisu.
+# ProductoJardinesHadas
+Repositorio para visor de PDF de Jardines de Hadas.
